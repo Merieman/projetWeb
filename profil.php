@@ -7,6 +7,8 @@ require("connectprojet.php");
 
 // Récupérer l'identifiant du collaborateur de la session
 $idCollaborateur = $_SESSION['idCollaborateur'];
+
+
  
 $req = "SELECT * FROM collaborateur WHERE idCollaborateur = :id";
 $stmt = $bd->prepare($req);
