@@ -3,6 +3,7 @@
 require_once 'connecterBase.php';
 
 require_once 'collabfct.php';
+require_once 'edit_project.php'
 
 ?>
 
@@ -159,23 +160,31 @@ require_once 'collabfct.php';
                 <ul id="project-list" class="list-group project-list">
                     <!-- Projets seront ajoutés dynamiquement ici -->
                     <?php
-                        // Requête pour sélectionner tous les noms de projets
-                        $sql = "SELECT NomProjet FROM projet";
+                    // Requête pour sélectionner tous les noms et états de projets
+                    $sql = "SELECT NomProjet, Statut FROM projet";
 
-                        // Exécuter la requête
-                        $resultat = mysqli_query($connexion, $sql);
+                    // Exécuter la requête
+                    $resultat = mysqli_query($connexion, $sql);
 
-                        // Vérifier s'il y a des résultats
-                        if (mysqli_num_rows($resultat) > 0) {
-                            // Parcourir les résultats et afficher chaque nom de projet dans une balise <li>
-                            while ($row = mysqli_fetch_assoc($resultat)) {
-                                echo '<li class="list-group-item" onclick="hideActivity(); showProjectDetails(\'' . $row["NomProjet"] . '\')">' . $row["NomProjet"] . '<span class="delete-project" onclick="deleteProject(\'' . $row["NomProjet"] . '\')">&#x2716;</span></li>';
-                            }
-                        } else {
-                            // Si aucun projet n'est trouvé dans la base de données
-                            echo "<li class='list-group-item'>Aucun projet trouvé</li>";
-                        }            
-?>
+                    // Vérifier s'il y a des résultats
+                    if (mysqli_num_rows($resultat) > 0) {
+                        // Parcourir les résultats et afficher chaque nom de projet avec l'état et les boutons
+                        while ($row = mysqli_fetch_assoc($resultat)) {
+                            // Déterminer la couleur en fonction de l'état du projet
+                            $statusColor = $row["Statut"] === "terminé" ? "text-success" : "text-primary";
+                            // Afficher le nom de projet avec l'état et les boutons
+                            echo '<li class="list-group-item" onclick="hideActivity(); showProjectDetails(\'' . $row["NomProjet"] . '\')">
+                                    <span>' . $row["NomProjet"] . '</span>
+                                    <span class="' . $statusColor . '">' . $row["Statut"] . '</span>
+                                    <span class="edit-project" onclick="editProject(\'' . $row["NomProjet"] . '\')">&#9998;</span>
+                                    <span class="delete-project" onclick="deleteProject(\'' . $row["NomProjet"] . '\')">&#x2716;</span>
+                                </li>';
+                        }
+                    } else {
+                        // Si aucun projet n'est trouvé dans la base de données
+                        echo "<li class='list-group-item'>Aucun projet trouvé</li>";
+                    }
+                    ?>
 
                 </ul>
                 <div class="input-group mt-3">
@@ -436,25 +445,41 @@ function checkProjectExistence(projectName) {
         }
     });
 }
-
 // Fonction pour ajouter le projet à la liste des projets dans l'interface utilisateur
-function addProjectToListUI(projectName) {
+function addProjectToListUI(projectName, projectStatus) {
     // Ajouter le projet à la liste des projets dans l'interface utilisateur
     var projectList = document.getElementById("project-list");
     var newProject = document.createElement("li");
     newProject.className = "list-group-item";
-    newProject.textContent = projectName;
 
-    // Ajouter un bouton de suppression à côté du nom du projet
-    var deleteButton = document.createElement("span");
-    deleteButton.className = "delete-project";
-    deleteButton.textContent = "\u2716";
-    deleteButton.onclick = function() {
+    // Ajouter le nom du projet
+    var projectNameSpan = document.createElement("span");
+    projectNameSpan.textContent = projectName;
+    newProject.appendChild(projectNameSpan);
+
+    // Ajouter l'état du projet avec le terme "En cours" en bleu
+    var statusSpan = document.createElement("span");
+    statusSpan.textContent = " en cours";
+    statusSpan.className = "text-primary"; // Utiliser la classe pour le texte en bleu
+    newProject.appendChild(statusSpan);
+
+    // Ajouter l'icône d'édition
+    var editIcon = document.createElement("span");
+    editIcon.textContent = " \u270E";
+    editIcon.className = "edit-project";
+    editIcon.onclick = function() {
+        editProject(projectName); // Fonction à implémenter pour l'édition du projet
+    };
+    newProject.appendChild(editIcon);
+
+    // Ajouter l'icône de suppression
+    var deleteIcon = document.createElement("span");
+    deleteIcon.textContent = " \u2716";
+    deleteIcon.className = "delete-project";
+    deleteIcon.onclick = function() {
         deleteProject(projectName);
     };
-
-    // Ajouter le bouton de suppression à l'élément li
-    newProject.appendChild(deleteButton);
+    newProject.appendChild(deleteIcon);
 
     // Ajouter un gestionnaire d'événement pour afficher les détails du projet au clic
     newProject.onclick = function() {
@@ -474,9 +499,11 @@ function addProjectToListUI(projectName) {
     addedProjectsCount++;
     updateProjectStatistics();
 
-    // Envoyer le nom du projet à PHP pour l'ajouter à la base de données (via AJAX par exemple)
-    addProjectToDatabase(projectName);
+    // Envoyer le nom et l'état du projet à PHP pour l'ajouter à la base de données (via AJAX par exemple)
+    addProjectToDatabase(projectName, projectStatus);
 }
+
+
 // JavaScript pour envoyer le nom du projet à PHP pour l'ajouter à la base de données (via AJAX par exemple)
 function addProjectToDatabase(projectName) {
     $.ajax({
@@ -774,6 +801,53 @@ console.log(collaboratorId);
     document.getElementById("collaborator-email").value = selectedEmail;
 
 }
+// Fonction pour éditer un projet
+function editProject(projectName, projectStatus) {
+    // Pré-remplir les champs du formulaire de modification avec les détails actuels du projet
+    document.getElementById('editProjectName').value = projectName;
+    document.getElementById('editProjectStatus').value = projectStatus;
+
+    // Ouvrir la boîte de dialogue modale d'édition
+    $('#editProjectModal').modal('show');
+
+    // Ajouter un gestionnaire d'événement pour le bouton "Enregistrer" dans la boîte de dialogue modale
+    document.getElementById('saveChangesBtn').onclick = function() {
+        // Récupérer les nouvelles valeurs des champs du formulaire
+        var newProjectName = document.getElementById('editProjectName').value;
+        var newProjectStatus = document.getElementById('editProjectStatus').value;
+
+        // Envoyer les nouvelles informations du projet à la page PHP pour traitement
+        $.ajax({
+            url: 'edit_project.php',
+            type: 'POST',
+            data: {
+                projectName: projectName, // Utiliser projectName ici
+                newProjectName: newProjectName,
+                newProjectStatus: newProjectStatus
+            },
+            success: function(response) {
+                // Afficher un message de succès à l'utilisateur
+                alert(response);
+                // Actualiser la liste des projets ou effectuer d'autres actions après la modification
+                // Rafraîchir les détails du projet affichés avec les nouvelles données
+                showProjectDetails(newProjectName);
+                // Marquer le projet comme édité
+                markProjectAsEdited(newProjectName);
+                // Mise à jour des statistiques
+                updateProjectStatistics();
+                 // Cacher le modal de modification du collaborateur
+            $('#editProjectModal').modal('hide');
+            },
+            error: function(xhr, status, error) {
+                // En cas d'erreur, afficher un message d'erreur à l'utilisateur
+                console.error(error);
+                alert("Une erreur s'est produite lors de la modification du projet.");
+            }
+        });
+    };
+}
+
+
 
     </script>
 
@@ -889,5 +963,39 @@ console.log(collaboratorId);
         </div>
     </div>
 </div>
+
+<!-- Boîte de dialogue modale d'édition de projet -->
+<div id="editProjectModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProjectModalLabel">Modifier le projet</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="editProjectName">Nom du projet :</label>
+                        <input type="text" class="form-control" id="editProjectName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProjectStatus">État du projet :</label>
+                        <select class="form-control" id="editProjectStatus">
+                            <option value="en cours">En cours</option>
+                            <option value="terminé">Terminé</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="saveChangesBtn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
