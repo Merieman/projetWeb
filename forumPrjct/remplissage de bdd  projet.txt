@@ -1,0 +1,25 @@
+les collaborateur:
+INSERT INTO Collaborateur (UserName, PhoneCollaborateur, AdresseCollaborateur, EmailCollaborateur, PasswordCollaborateur, PosteCollaborateur)
+VALUES 
+  ('Ahmed El Azzouzi', '0612345678', '123 Avenue Mohammed V, Casablanca', 'ahmed.azzouzi@example.com', 'password1', 'Développeur Back-End'),
+  ('Fatima Zahra El Hani', '0623456789', '456 Boulevard Zerktouni, Rabat', 'fatima.zahra@example.com', 'password2', 'Développeuse Front-End'),
+  ('Mohamed Alaoui', '0634567890', '789 Rue Allal El Fassi, Marrakech', 'mohamed.alaoui@example.com', 'password3', 'Ingénieur DevOps'),
+  ('Zineb El Mouden', '0645678901', '1011 Route des Hôpitaux, Casablanca', 'zineb.elmouden@example.com', 'password4', 'Analyste de Données'),
+  ('Yassine El Hami', '0656789012', '1213 Rue Moulay Youssef, Fès', 'yassine.elhami@example.com', 'password5', 'Testeur QA');
+
+
+les admins:
+INSERT INTO Admin (Nom, Prenom, EmailAdmin, PasswordAdmin)
+VALUES 
+  ('Bouzid', 'Samira', 'samira.bouzid@example.com', 'adminpass1'),
+  ('El Idrissi', 'Hicham', 'hicham.elidrissi@example.com', 'adminpass2');
+
+
+les projet:
+
+
+INSERT INTO Projet (NomProjet)
+VALUES 
+  ('Application Web de Gestion de Projets'),
+  ('Plateforme de Commerce Électronique'),
+  ('Système de Surveillance des Serveurs');
